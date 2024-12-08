@@ -1,50 +1,65 @@
-package expo.modules.sql
+ package expo.modules.sql
 
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
-import java.net.URL
+import java.sql.Connection
+import java.sql.DriverManager
+import java.sql.ResultSet
+import java.sql.Statement
 
 class ExpoSqlModule : Module() {
-  // Each module class must implement the definition function. The definition consists of components
-  // that describes the module's functionality and behavior.
-  // See https://docs.expo.dev/modules/module-api for more details about available components.
-  override fun definition() = ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoSql')` in JavaScript.
-    Name("ExpoSql")
 
-    // Sets constant properties on the module. Can take a dictionary or a closure that returns a dictionary.
-    Constants(
-      "PI" to Math.PI
-    )
+    override fun definition() = ModuleDefinition {
+        Name("ExpoSql")
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
+        Function("connect") { host: String, user: String, password: String, database: String ->
+            try {
+                // Load the MySQL driver
+                Class.forName("com.mysql.cj.jdbc.Driver")
 
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      "Hello world! 👋"
+                // Create the connection URL
+                val url = "jdbc:mysql://$host:3306/$database"
+
+                // Establish the connection
+                val connection: Connection = DriverManager.getConnection(url, user, password)
+                connection
+            } catch (e: Exception) {
+                throw Exception("Database connection failed: ${e.message}")
+            }
+        }
+
+        Function("query") { query: String, host: String, user: String, password: String, database: String ->
+            val results = mutableListOf<Map<String, Any?>>()
+            try {
+                // Load the MySQL driver
+                Class.forName("com.mysql.cj.jdbc.Driver")
+
+                // Create the connection URL
+                val url = "jdbc:mysql://$host:3306/$database"
+
+                // Establish the connection
+                val connection: Connection = DriverManager.getConnection(url, user, password)
+                val statement: Statement = connection.createStatement()
+                val resultSet: ResultSet = statement.executeQuery(query)
+
+                // Process the results
+                val metaData = resultSet.metaData
+                val columnCount = metaData.columnCount
+                while (resultSet.next()) {
+                    val row = mutableMapOf<String, Any?>()
+                    for (i in 1..columnCount) {
+                        row[metaData.getColumnName(i)] = resultSet.getObject(i)
+                    }
+                    results.add(row)
+                }
+
+                resultSet.close()
+                statement.close()
+                connection.close()
+            } catch (e: Exception) {
+                throw Exception("Query execution failed: ${e.message}")
+            }
+            results
+        }
     }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { value: String ->
-      // Send an event to JavaScript.
-      sendEvent("onChange", mapOf(
-        "value" to value
-      ))
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of
-    // the view definition: Prop, Events.
-    View(ExpoSqlView::class) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { view: ExpoSqlView, url: URL ->
-        view.webView.loadUrl(url.toString())
-      }
-      // Defines an event that the view can send to JavaScript.
-      Events("onLoad")
-    }
-  }
 }

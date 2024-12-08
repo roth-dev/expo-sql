@@ -41,3 +41,11 @@ android {
     abortOnError false
   }
 }
+repositories {
+    mavenCentral() // Ensure this is present
+}
+
+dependencies {
+  implementation 'mysql:mysql-connector-java:8.0.32'
+  // implementation 'com.github.PhilJay:MPAndroidChart:v3.1.0'
+}

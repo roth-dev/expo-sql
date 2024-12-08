@@ -1,38 +1,34 @@
-import { useEvent } from 'expo';
-import ExpoSql, { ExpoSqlView } from 'expo-sql';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import ExpoSql, { ExpoSqlView } from "expo-sql";
+import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 export default function App() {
-  const onChangePayload = useEvent(ExpoSql, 'onChange');
+  async function onConnect() {
+    const config = {
+      host: "localhost",
+      user: "root",
+      password: "123456",
+      database: "test",
+    };
+    try {
+      const connection = await ExpoSql.connect(
+        config.host,
+        config.user,
+        config.password,
+        config.database
+      );
+      console.log("Connected to database:", connection);
+
+      // const results = await query("SELECT * FROM your_table", config);
+      // console.log("Query results:", results);
+    } catch (error) {
+      console.error("Database error:", error);
+    }
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
-        <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{ExpoSql.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{ExpoSql.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
-          <Button
-            title="Set value"
-            onPress={async () => {
-              await ExpoSql.setValueAsync('Hello from JS!');
-            }}
-          />
-        </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <ExpoSqlView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
+        <Button title="Connect to Database" onPress={onConnect} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -58,13 +54,13 @@ const styles = {
   },
   group: {
     margin: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
   },
   container: {
     flex: 1,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
   view: {
     flex: 1,
